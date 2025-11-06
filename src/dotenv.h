@@ -35,20 +35,6 @@
     #include <string.h>
     #include <stdlib.h>
 
-    char* dotenv_strdup(const char* to_dupe)
-    {
-        size_t dupeSize = strlen(to_dupe)+1;
-        char* newString = (char*)malloc(dupeSize);
-        
-        if (newString == NULL)
-        {
-            return NULL;
-        }
-
-        memcpy(newString, to_dupe, dupeSize);
-        return newString;
-    }
-
     dotenv_dict* dotenv_get(const char* path, const char* key)
     {
         char line[DOTENV__MAX_LINE_LENGTH];
