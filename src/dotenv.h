@@ -1,19 +1,23 @@
 #ifndef DOTENV_H
-    #define DOTENV_H
+#define DOTENV_H
 
-    #ifdef __cplusplus
-        extern "C" {
-    #endif
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    #ifndef DOTENV__MAX_LINE_LENGTH
-        #define DOTENV__MAX_LINE_LENGTH 256
-    #endif
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 
-    #ifndef DOTENV_MAX_VARIABLE_LENGTH
-        #define DOTENV_MAX_VARIABLE_LENGTH 128
-    #endif
+#ifndef DOTENV__MAX_LINE_LENGTH
+#define DOTENV__MAX_LINE_LENGTH 256
+#endif
 
-    #define DOTENV__TEMPLATE "%[^=]=%[^\n]"
+#ifndef DOTENV_MAX_VARIABLE_LENGTH
+#define DOTENV_MAX_VARIABLE_LENGTH 128
+#endif
+
+#define DOTENV__TEMPLATE "%[^=]=%[^\n]"
 
     typedef struct
     {
@@ -24,92 +28,122 @@
     dotenv_dict* dotenv_get(const char* path, const char* key);
     void dotenv_dict_cleanup(dotenv_dict* dict);
 
-    #ifdef __cplusplus
-        }
-    #endif
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 
 #ifdef DOTENV_IMPLEMENTATION
-    #include <stdio.h>
-    #include <string.h>
-    #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-    dotenv_dict* dotenv_get(const char* path, const char* key)
+void dotenv__sscanf(const char* line, char* key, char* value)
+{
+#ifndef _WIN32
+    sscanf(line, DOTENV__TEMPLATE, key, value);
+#else
+    sscanf_s(line, DOTENV__TEMPLATE, key, DOTENV_MAX_VARIABLE_LENGTH, value, DOTENV_MAX_VARIABLE_LENGTH);
+#endif
+}
+
+void dotenv__strcpy(char* destination, char* source)
+{
+#ifndef _WIN32
+    strcpy(destination, source);
+#else
+    strcpy_s(destination, DOTENV_MAX_VARIABLE_LENGTH, source);
+#endif
+}
+
+dotenv_dict* dotenv_get(const char* path, const char* key)
+{
+    char line[DOTENV__MAX_LINE_LENGTH];
+    FILE* file;
+    dotenv_dict* dict;
+    unsigned char foundValue;
+
+    foundValue = 0;
+
+#ifdef _WIN32
+    errno_t file_errno = fopen_s(&file, path, "r");
+
+    if (file_errno != 0)
     {
-        char line[DOTENV__MAX_LINE_LENGTH];
-        FILE* file;
-        dotenv_dict* dict;
-        unsigned char foundValue;
+        printf("[dotenv] Could not open file!\n");
+        return NULL;
+    }
+#else
+    file = fopen(path, "r");
+#endif
+    dict = (dotenv_dict*)malloc(sizeof(dotenv_dict));
 
-        foundValue = 0;
-        file = fopen(path, "r");
-        dict = (dotenv_dict*)malloc(sizeof(dotenv_dict));
-
-        if (file == NULL)
-        {
-            return NULL;
-        }
-
-        if (dict == NULL)
-        {
-            return NULL;
-        }
-
-
-        while (fgets(line, DOTENV__MAX_LINE_LENGTH, file))
-        {
-
-            char _key[DOTENV_MAX_VARIABLE_LENGTH];
-            char value[DOTENV_MAX_VARIABLE_LENGTH];
-
-            /* Comment found */
-            if (line[0] == '#')
-            {
-                continue;
-            }
-
-            #ifdef DOTENV__DEBUG
-                printf("%s", line);
-            #endif
-
-            sscanf(line, DOTENV__TEMPLATE, _key, value);
-
-            if (strcmp(_key, key) != 0)
-            {
-                continue;
-            }
-
-            foundValue = 1;
-            strcpy(dict->key, _key);
-            strcpy(dict->value, value);
-        }
-
-        if (foundValue == 0)
-        {
-            free(dict);
-            dict = NULL;
-            fclose(file);
-            file = NULL;
-            return NULL;
-        }
-
-        #ifdef DOTENV__DEBUG
-            printf("\n");
-        #endif
-
-        fclose(file);
-        return dict;
+    if (file == NULL)
+    {
+        return NULL;
     }
 
-    void dotenv_dict_cleanup(dotenv_dict* dict)
+    if (dict == NULL)
     {
-        if (dict == NULL)
+        return NULL;
+    }
+
+
+    while (fgets(line, DOTENV__MAX_LINE_LENGTH, file))
+    {
+
+        char _key[DOTENV_MAX_VARIABLE_LENGTH];
+        char value[DOTENV_MAX_VARIABLE_LENGTH];
+
+        /* Comment found */
+        if (line[0] == '#')
         {
-            return;
+            continue;
         }
 
+#ifdef DOTENV__DEBUG
+        printf("%s", line);
+#endif
+
+        dotenv__sscanf(line, _key, value);
+
+        printf("[%s] [%s]", _key, key);
+        if (strcmp(_key, key) != 0)
+        {
+            continue;
+        }
+
+        foundValue = 1;
+        dotenv__strcpy(dict->key, _key);
+        dotenv__strcpy(dict->value, value);
+    }
+
+    if (foundValue == 0)
+    {
         free(dict);
         dict = NULL;
+        fclose(file);
+        file = NULL;
+        return NULL;
     }
+
+#ifdef DOTENV__DEBUG
+    printf("\n");
+#endif
+
+    fclose(file);
+    return dict;
+}
+
+void dotenv_dict_cleanup(dotenv_dict* dict)
+{
+    if (dict == NULL)
+    {
+        return;
+    }
+
+    free(dict);
+    dict = NULL;
+}
 #endif
