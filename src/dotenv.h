@@ -21,7 +21,7 @@ extern "C" {
         char value[DOTENV_MAX_VARIABLE_LENGTH];
     }dotenv_dict;
 
-    dotenv_dict* dotenv_get(const char* path, const char* key);
+    dotenv_dict* dotenv_get_value_from_key(const char* path, const char* key);
     void dotenv_dict_cleanup(dotenv_dict* dict);
 
 #ifdef __cplusplus
@@ -53,7 +53,7 @@ void dotenv__strcpy(char* destination, char* source)
 #endif
 }
 
-dotenv_dict* dotenv_get(const char* path, const char* key)
+dotenv_dict* dotenv_get_value_from_key(const char* path, const char* key)
 {
     char line[DOTENV__MAX_LINE_LENGTH];
     FILE* file;
