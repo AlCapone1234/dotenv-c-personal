@@ -67,7 +67,9 @@ dotenv_dict* dotenv_get_value_from_key(const char* path, const char* key)
 
     if (file_errno != 0)
     {
-        printf("[dotenv] Could not open file!\n");
+        #ifdef DOTENV__DEBUG
+            printf("[dotenv] Could not open file!\n");
+        #endif
         return NULL;
     }
 #else
