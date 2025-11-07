@@ -1,46 +1,19 @@
 CC := gcc
+CFLAGS := -std=c89 -Wall -Wextra -pedantic
+BINARY := main
 
-SRC_DIR := src
+all: run
 
-BUILD_DIR := build
+build:
+	$(CC) $(CFLAGS) src/main.c -o $(BINARY) 
 
-CFLAGS := -std=c89 -Wall -Wextra -MMD -MP -pedantic
+run: build
+	./$(BINARY)
 
-LDFLAGS := -flto -Wl,--gc-sections
+test:
+	$(CC) $(CLFAGS) tests/test.c -o test
+	./test
+	rm test
 
-SRC := $(shell find -L $(SRC_DIR) -type f -name '*.c')
-
-OBJ := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRC))
-
-DEP := $(OBJ:.o=.d)
-
-BIN := main
-
-all: $(BIN)
-	@echo "Build complete."
-
-$(BIN): $(OBJ)
-	@$(CC) $(LDFLAGS) $(OBJ) -o $@
-
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	@echo "Compiling $<..."
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
-	
-run: $(BIN)
-	./$(BIN)
-
-valgrind: $(BIN)
-	valgrind --leak-check=yes ./$(BIN)
-	
-clean:
-	@rm -rf $(BUILD_DIR) $(BIN)
-	
-print:
-	@echo "Källfiler: $(SRC)"
-	@echo "Objektfiler: $(OBJ)"
-	@echo "Dependency-filer: $(DEP)"
-	
--include $(DEP)
-
-.PHONY: all run clean
+valgrind: build
+	valgrind --leak-check=yes ./$(BINARY)
