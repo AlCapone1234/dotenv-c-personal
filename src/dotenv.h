@@ -5,10 +5,6 @@
 extern "C" {
 #endif
 
-#ifdef _WIN32
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #ifndef DOTENV__MAX_LINE_LENGTH
 #define DOTENV__MAX_LINE_LENGTH 256
 #endif
@@ -86,6 +82,7 @@ dotenv_dict* dotenv_get(const char* path, const char* key)
 
     if (dict == NULL)
     {
+        fclose(file);
         return NULL;
     }
 
@@ -108,7 +105,10 @@ dotenv_dict* dotenv_get(const char* path, const char* key)
 
         dotenv__sscanf(line, _key, value);
 
+
+#ifdef DOTENV__DEBUG
         printf("[%s] [%s]", _key, key);
+#endif
         if (strcmp(_key, key) != 0)
         {
             continue;
