@@ -77,6 +77,12 @@ dotenv_dict* dotenv_get_value_from_key(const char* path, const char* key)
 
     if (file == NULL)
     {
+        if (dict)
+        {
+            free(dict);
+            dict = NULL;
+        }
+
         return NULL;
     }
 
